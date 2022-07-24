@@ -3,7 +3,7 @@ class StatusCodeError(Exception):
     pass
 
 
-class StatusHomeWorkError(Exception):
+class StatusError(Exception):
     """Статус домашки с ошибочным значением."""
     pass
 

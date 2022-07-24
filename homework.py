@@ -1,5 +1,3 @@
-import datetime
-import json
 import logging
 import os
 import requests
@@ -8,9 +6,8 @@ import time
 
 from http import HTTPStatus
 from dotenv import load_dotenv
-from telegram.ext import CommandHandler, Updater
 
-from exceptions import APIResponseException, StatusCodeError, StatusHomeWorkError
+from exceptions import APIResponseException, StatusCodeError, StatusError
 
 
 load_dotenv()
@@ -21,7 +18,7 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM')
 TELEGRAM_CHAT_ID = os.getenv('CHAT_ID')
 
 
-RETRY_TIME = 600 
+RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -55,6 +52,7 @@ def send_message(bot, message):
         message = f'Сообщение в Telegram не отправлено: {telegram_error}'
         logger.error(message)
 
+
 def get_api_answer(current_timestamp):
     """Запрос к эндпоинту API."""
     timestamp = current_timestamp or int(time.time())
@@ -62,7 +60,7 @@ def get_api_answer(current_timestamp):
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     try:
         response = requests.get(ENDPOINT, headers=headers, params=params)
-    except ConnectionError as error:
+    except ConnectionError:
         message = 'Ошибка подключения к API.'
         logger.error(message)
         raise ConnectionError(message)
@@ -73,24 +71,26 @@ def get_api_answer(current_timestamp):
     logger.info('Запрос к эндпоинту успешно выполнен.')
     return response.json()
 
+
 def check_response(response):
     """Проверка корректности ответа API."""
     try:
         homeworks = response['homeworks']
-    except KeyError as error:
+    except KeyError:
         message = 'В словаре нет ключа homeworks.'
         logger.error(message)
         raise KeyError(message)
-    if  len(homeworks) == 0:
+    if len(homeworks) == 0:
         message = 'На проверку ничего не отправлено.'
         logger.error(message)
         raise APIResponseException(message)
     if not isinstance(homeworks, list):
         message = 'В ответе API домашки выводятся не списком.'
-        logger.error(error_message)
-        raise exceptions.APIResponseException(message)
+        logger.error(message)
+        raise APIResponseException(message)
     logger.info('Полученные данные корректны.')
     return homeworks
+
 
 def parse_status(homework):
     """Проверка обновления статуса работы."""
@@ -103,10 +103,11 @@ def parse_status(homework):
     if homework_status not in HOMEWORK_STATUSES:
         message = 'Статус домашки с недокументированным значением.'
         logger.error(message)
-        raise StatusHomeWorkError(message)
+        raise StatusError(message)
     verdict = HOMEWORK_STATUSES[homework_status]
     logger.info('Обновлен статус проверки работы.')
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+
 
 def check_tokens():
     """Проверка доступности переменных окружения."""
@@ -124,6 +125,7 @@ def check_tokens():
             return token_status
     logger.info('Получен доступ к необходимым переменным окружения.')
     return token_status
+
 
 def main():
     """Основная логика работы бота."""
@@ -149,7 +151,7 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.critical(message)
-        time.sleep(RETRY_TIME) 
+        time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
