@@ -8,8 +8,9 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
-from exceptions import (APIResponseException, RequestExceptionError,
-                            StatusCodeError, StatusError)
+from exceptions import (
+    APIResponseException, RequestExceptionError, StatusCodeError, StatusError
+)
 
 
 load_dotenv()
@@ -84,15 +85,11 @@ def check_response(response):
     """Проверка корректности ответа API."""
     homeworks_list = response['homeworks']
     if 'homeworks' not in response:
-        message = f'В словаре нет ключа homeworks .'
+        message = 'В словаре нет ключа homeworks .'
         logger.error(message)
         return KeyError(message)
     if not isinstance(homeworks_list, list):
         message = 'В ответе API домашки выводятся не списком.'
-        logger.error(message)
-        raise APIResponseException(message)
-    if len(homeworks_list) == 0:
-        message = 'На проверку ничего не отправлено.'
         logger.error(message)
         raise APIResponseException(message)
     logger.info('Полученные данные корректны.')
