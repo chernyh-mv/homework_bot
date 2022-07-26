@@ -9,7 +9,7 @@ import telegram
 from dotenv import load_dotenv
 
 from exceptions import (APIResponseException, RequestExceptionError,
-    StatusCodeError, StatusError)
+                            StatusCodeError, StatusError)
 
 
 load_dotenv()
@@ -33,6 +33,7 @@ HOMEWORK_STATUSES = {
 
 START_MESSAGE = 'Привет! Я готов тебе помочь!'
 
+
 logging.basicConfig(
     level=logging.DEBUG,
     filename='program.log',
@@ -43,13 +44,6 @@ logger = logging.getLogger(__name__)
 logger.addHandler(
     logging.StreamHandler()
 )
-
-
-def check_keys_in_dict(expected_key, expected_dict):
-    if expected_key not in expected_dict:
-        message = f'В словаре нет ключа {expected_key} .'
-        logger.error(message)
-        return KeyError(message)
 
 
 def send_message(bot, message):
@@ -71,27 +65,28 @@ def get_api_answer(current_timestamp):
     try:
         response = requests.get(ENDPOINT, headers=headers, params=params)
         if response.status_code != HTTPStatus.OK:
-          message = f'Эндпоинт API не доступен. Статус: {response.status_code}.'
-          logger.error(message)
-          raise StatusCodeError(message)
+            message = f'Эндпоинт API не доступен: {response.status_code}.'
+            logger.error(message)
+            raise StatusCodeError(message)
         logger.info('Запрос к эндпоинту успешно выполнен.')
         return response.json()
-    except requests.exceptions.RequestException as error:
+    except requests.exceptions.RequestException:
         message = 'Ошибка подключения к API.'
         logger.error(message)
         raise RequestExceptionError(message)
     except json.JSONDecodeError as error:
         message = f'Код ответа API: {error}'
-        logger.error(code_api_msg)
-        raise json.JSONDecodeError(code_api_msg)
+        logger.error(message)
+        raise json.JSONDecodeError(message)
 
 
 def check_response(response):
     """Проверка корректности ответа API."""
-    try:
-        homeworks_list = response['homeworks']
-    except KeyError:
-        check_keys_in_dist(homeworks, response)
+    homeworks_list = response['homeworks']
+    if 'homeworks' not in response:
+        message = f'В словаре нет ключа homeworks .'
+        logger.error(message)
+        return KeyError(message)
     if not isinstance(homeworks_list, list):
         message = 'В ответе API домашки выводятся не списком.'
         logger.error(message)
@@ -156,7 +151,7 @@ def main():
             try:
                 homework = check_response(response)[0]
                 message = parse_status(homework)
-            except:
+            except IndexError:
                 message = 'Список пуст'
             send_message(bot, message)
             current_timestamp = response.get('current_date', current_timestamp)
@@ -164,7 +159,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.critical(message)
         time.sleep(RETRY_TIME)
-        
+
 
 if __name__ == '__main__':
     main()
