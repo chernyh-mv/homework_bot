@@ -11,3 +11,7 @@ class StatusError(Exception):
 class APIResponseException(Exception):
     """Исключение для проверки ответа API на корректность."""
     pass
+
+
+class RequestExceptionError(Exception):
+    """Ошибка запроса."""
