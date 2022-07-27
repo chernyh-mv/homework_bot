@@ -83,11 +83,15 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверка корректности ответа API."""
-    homeworks_list = response['homeworks']
+    if not isinstance(response, dict):
+        message = 'Неправильный тип полученного ответа'
+        logging.error(message)
+        raise TypeError(message)
     if 'homeworks' not in response:
         message = 'В словаре нет ключа homeworks .'
         logger.error(message)
-        return KeyError(message)
+        raise KeyError(message)
+    homeworks_list = response['homeworks']
     if not isinstance(homeworks_list, list):
         message = 'В ответе API домашки выводятся не списком.'
         logger.error(message)
@@ -98,12 +102,12 @@ def check_response(response):
 
 def parse_status(homework):
     """Проверка обновления статуса работы."""
+    if not (('homework_name' in homework) and ('status' in homework)):
+        message = 'Отсутствуют имя и статус домашней работы'
+        logging.error(message)
+        raise KeyError(message)
     homework_name = homework['homework_name']
     homework_status = homework['status']
-    if 'homework_name' not in homework:
-        raise KeyError('Нет ключа homework_name.')
-    if 'status' not in homework:
-        raise KeyError('Нет ключа status.')
     if homework_name is None:
         message = 'Пустое значение.'
         logger.error(message)
